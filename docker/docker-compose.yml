@@ -8,6 +8,7 @@ services:
       - fluent-bit
       - polar-keycloak
       - polar-postgres
+      - tempo
     image: "catalog-service"
     container_name: "catalog-service"
     ports:
@@ -19,6 +20,10 @@ services:
       # Buildpacks environment variable to enable debug through a socket on port 8001
       - BPL_DEBUG_ENABLED=true
       - BPL_DEBUG_PORT=8001
+      - JAVA_TOOL_OPTIONS=-javaagent:/workspace/BOOT-INF/lib/opentelemetry-javaagent-1.33.3.jar
+      - OTEL_SERVICE_NAME=catalog-service
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4317
+      - OTEL_METRICS_EXPORTER=none
       - SPRING_CLOUD_CONFIG_URI=http://config-service:8888
       - SPRING_DATASOURCE_URL=jdbc:postgresql://polar-postgres:5432/polardb_catalog
       - SPRING_PROFILES_ACTIVE=testdata
@@ -179,6 +184,7 @@ services:
     depends_on:
       - loki
       - prometheus
+      - tempo
     ports:
       - "3000:3000"
     environment:
@@ -214,3 +220,13 @@ services:
       - "9090:9090"
     volumes:
       - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+
+  tempo:
+    image: grafana/tempo:2.5.0
+    container_name: tempo
+    command: -config.file=/etc/tempo-config.yml
+    ports:
+      #- "3110:3100"     # Tempo
+      - "4317:4317"     # OTel
+    volumes:
+      - ./observability/tempo/tempo.yml:/etc/tempo-config.yml
