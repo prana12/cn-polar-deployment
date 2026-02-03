@@ -17,8 +17,8 @@ configMapGenerator:
 
 images:
 - name: catalog-service
-  newName: ghcr.io/prana12/cn-catalog-service
-  newTag: 0bb9512858f1dfddc584dd5893c1a2bcb4b5e998
+  newName: ghcr.io/prana12/catalog-service
+  newTag: 6c525f9f5474dca90ed1be51486d499bd12856c8
 
 replicas:
 - count: 2
