@@ -2,24 +2,24 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - github.com/prana12/cn-catalog-service/k8s?ref=eaa2b58315eb066785368ee5193d2240fd9920f1
+- github.com/prana12/cn-catalog-service/k8s?ref=eaa2b58315eb066785368ee5193d2240fd9920f1
 
 patchesStrategicMerge:
-  - patch-env.yml
-  - patch-resources.yml
-  - patch-volumes.yml
+- patch-env.yml
+- patch-resources.yml
+- patch-volumes.yml
 
 configMapGenerator:
-  - behavior: merge
-    files:
-      - application-prod.yml
-    name: catalog-config
+- behavior: merge
+  files:
+  - application-prod.yml
+  name: catalog-config
 
 images:
-  - name: catalog-service
-    newName: ghcr.io/prana12/catalog-service
-    newTag: eaa2b58315eb066785368ee5193d2240fd9920f1
+- name: catalog-service
+  newName: ghcr.io/prana12/cn-catalog-service
+  newTag: 0bb9512858f1dfddc584dd5893c1a2bcb4b5e998
 
 replicas:
-  - count: 2
-    name: catalog-service
+- count: 2
+  name: catalog-service
