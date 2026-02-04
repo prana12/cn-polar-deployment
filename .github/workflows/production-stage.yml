@@ -39,17 +39,7 @@ jobs:
             else . end
           )' kustomization.yml
 
-          # sed -i 's/ref=[a-z0-9]*/ref=${{ env.APP_VERSION }}/' kustomization.yml (Original REPLACED)
-          # [Alternative] Update any resources entries that contain a ref= query parameter.
-          # This replaces only the ref value and preserves other query params.
-          yq eval -i '.resources |= map(
-            if (type == "!!str" and test("ref=")) then
-              capture("(?<base>[^?]+)(?:\\?(?<query>.*))?") as $m
-              | ($m.query // "") as $q
-              | ($q | split("&") | map(select(length > 0)) | map(if test("^ref=") then "ref=" + env(APP_VERSION) else . end) | join("&")) as $newq
-              | $m.base + (if $newq == "" then "" else "?" + $newq end)
-            else . end
-          )' kustomization.yml
+          sed -i 's/ref=[a-z0-9]*/ref=${{ env.APP_VERSION }}/' kustomization.yml
       - name: Commit updated manifests
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
