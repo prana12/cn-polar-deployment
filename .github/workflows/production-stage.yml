@@ -23,14 +23,14 @@ jobs:
 
           # kustomize edit set image ${{ env.APP_NAME }}=${{ env.APP_IMAGE }}:${{ env.APP_VERSION }} (Original REPLACED)
           # [Alternative] install mikefarah yq v4 (used to edit YAML AST safely)
-          YQ_VERSION=v4.34.1
-          wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64
-          chmod +x /usr/local/bin/yq
+          #YQ_VERSION=v4.34.1
+          #wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64
+          #chmod +x /usr/local/bin/yq
 
           # Update images[]: set newName and newTag for the matching image name;
-          yq -i '.images[0].newName = "${{ env.APP_IMAGE }}" | .images[0].newTag = "${{ env.APP_VERSION }}"' kustomization.yml
+          #yq -i '.images[0].newName = "${{ env.APP_IMAGE }}" | .images[0].newTag = "${{ env.APP_VERSION }}"' kustomization.yml
 
-          sed -i 's/ref=[a-z0-9]*/ref=${{ env.APP_VERSION }}/' kustomization.yml
+          sed -i 's/newTag: [a-z0-9]*/newTag: ${{ env.APP_VERSION }}/;s/ref=[a-z0-9]*/ref=${{ env.APP_VERSION }}/' kustomization.yml
       - name: Commit updated manifests
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
