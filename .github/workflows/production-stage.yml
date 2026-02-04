@@ -28,7 +28,7 @@ jobs:
           chmod +x /usr/local/bin/yq
 
           # Update images[]: set newName and newTag for the matching image name;
-          yq -i '.images[0].newName = ${{ env.APP_IMAGE }} | .images[0].newTag = ${{ env.APP_VERSION }}' kustomization.yml
+          yq -i '.images[0].newName = "${{ env.APP_IMAGE }}" | .images[0].newTag = "${{ env.APP_VERSION }}"' kustomization.yml
 
           sed -i 's/ref=[a-z0-9]*/ref=${{ env.APP_VERSION }}/' kustomization.yml
       - name: Commit updated manifests
