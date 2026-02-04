@@ -20,8 +20,35 @@ jobs:
       - name: Update image version
         run: |
           cd kubernetes/applications/${{ env.APP_NAME }}/production
-          kustomize edit set image ${{ env.APP_NAME }}=${{ env.APP_IMAGE }}:${{ env.APP_VERSION }}
-          sed -i 's/ref=[a-z0-9]*/ref=${{ env.APP_VERSION }}/' kustomization.yml
+          
+          # kustomize edit set image ${{ env.APP_NAME }}=${{ env.APP_IMAGE }}:${{ env.APP_VERSION }} (Original REPLACED)
+          # [Alternative] install mikefarah yq v4 (used to edit YAML AST safely)
+          YQ_VERSION=v4.34.1
+          wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64
+          chmod +x /usr/local/bin/yq
+
+          # --- Update images[]: set newName and newTag for the matching image name;
+          # if no images[] entry exists for APP_NAME, append one. This is YAML-aware
+          # and preserves the rest of the file structure.
+          yq eval -i '
+            if ((.images // []) | map(select(.name == env(APP_NAME))) | length) > 0 then
+              .images |= map(if .name == env(APP_NAME) then .newName = env(APP_IMAGE) | .newTag = env(APP_VERSION) else . end)
+            else
+              .images = (.images // []) + [{"name": env(APP_NAME), "newName": env(APP_IMAGE), "newTag": env(APP_VERSION)}]
+            end
+          ' kustomization.yml
+
+          # sed -i 's/ref=[a-z0-9]*/ref=${{ env.APP_VERSION }}/' kustomization.yml (Original REPLACED)
+          # [Alternative] Update any resources entries that contain a ref= query parameter.
+          # This replaces only the ref value and preserves other query params.
+          yq eval -i '.resources |= map(
+            if (type == "!!str" and test("ref=")) then
+              capture("(?<base>[^?]+)(?:\\?(?<query>.*))?") as $m
+              | ($m.query // "") as $q
+              | ($q | split("&") | map(select(length > 0)) | map(if test("^ref=") then "ref=" + env(APP_VERSION) else . end) | join("&")) as $newq
+              | $m.base + (if $newq == "" then "" else "?" + $newq end)
+            else . end
+          )' kustomization.yml
       - name: Commit updated manifests
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
