@@ -20,7 +20,7 @@ jobs:
       - name: Update image version
         run: |
           cd kubernetes/applications/${{ env.APP_NAME }}/production
-          
+
           # kustomize edit set image ${{ env.APP_NAME }}=${{ env.APP_IMAGE }}:${{ env.APP_VERSION }} (Original REPLACED)
           # [Alternative] install mikefarah yq v4 (used to edit YAML AST safely)
           YQ_VERSION=v4.34.1
@@ -30,14 +30,17 @@ jobs:
           # --- Update images[]: set newName and newTag for the matching image name;
           # if no images[] entry exists for APP_NAME, append one. This is YAML-aware
           # and preserves the rest of the file structure.
-          yq eval -i '
-            if ((.images // []) | map(select(.name == env(APP_NAME))) | length) > 0 then
-              .images |= map(if .name == env(APP_NAME) then .newName = env(APP_IMAGE) | .newTag = env(APP_VERSION) else . end)
-            else
-              .images = (.images // []) + [{"name": env(APP_NAME), "newName": env(APP_IMAGE), "newTag": env(APP_VERSION)}]
-            end
-          ' kustomization.yml
-          
+#          yq eval -i '
+#            if ((.images // []) | map(select(.name == env(APP_NAME))) | length) > 0 then
+#              .images |= map(if .name == env(APP_NAME) then .newName = env(APP_IMAGE) | .newTag = env(APP_VERSION) else . end)
+#            else
+#              .images = (.images // []) + [{"name": env(APP_NAME), "newName": env(APP_IMAGE), "newTag": env(APP_VERSION)}]
+#            end
+#          ' kustomization.yml
+
+          # Update images[]: set newName/newTag on matching name, otherwise append
+          yq eval -i '.images = ((.images // []) | map( if .name == env(APP_NAME) then (.newName = env(APP_IMAGE) | .newTag = env(APP_VERSION)) else . end ))' kustomization.yml
+
           sed -i 's/ref=[a-z0-9]*/ref=${{ env.APP_VERSION }}/' kustomization.yml
       - name: Commit updated manifests
         uses: stefanzweifel/git-auto-commit-action@v5
