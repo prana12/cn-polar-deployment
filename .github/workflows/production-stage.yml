@@ -31,12 +31,12 @@ jobs:
           # if no images[] entry exists for APP_NAME, append one. This is YAML-aware
           # and preserves the rest of the file structure.
           yq eval -i '.resources |= map(
-            if (type == "!!str" and test("ref=")) then
-              capture("(?<base>[^?]+)(?:\\?(?<query>.*))?") as $m
-              | ($m.query // "") as $q
-              | ($q | split("&") | map(select(length > 0)) | map(if test("^ref=") then "ref=" + env(APP_VERSION) else . end) | join("&")) as $newq
-              | $m.base + (if $newq == "" then "" else "?" + $newq end)
-            else . end
+            if (test("ref=")) then
+              if ((.images // []) | map(select(.name == env(APP_NAME))) | length) > 0 then
+              .images |= map(if .name == env(APP_NAME) then .newName = env(APP_IMAGE) | .newTag = env(APP_VERSION) else . end)
+            else
+              .images = (.images // []) + [{"name": env(APP_NAME), "newName": env(APP_IMAGE), "newTag": env(APP_VERSION)}]
+            end
           )' kustomization.yml
 
           sed -i 's/ref=[a-z0-9]*/ref=${{ env.APP_VERSION }}/' kustomization.yml
